@@ -46,7 +46,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path dist -Force | Out-Null
           Compress-Archive `
-            -LiteralPath "build\Release\NetMeter.exe", "README.md", "NetMeter.ico" `
+            -LiteralPath "build\Release\NetMeter.exe", "README.md", "NetMeter.ico", "NetMeter.png" `
             -DestinationPath "dist\NetMeter-win-${{ matrix.arch }}.zip" `
             -Force
 

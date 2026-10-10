@@ -1,4 +1,8 @@
-# NetMeter
+<p align="center">
+  <img src="NetMeter.png" alt="NetMeter icon" width="96">
+</p>
+
+<h1 align="center">NetMeter</h1>
 
 A small Windows network speed meter that displays current download and upload rates beside the taskbar notification area.
 
@@ -40,5 +44,5 @@ The reading is total traffic on the selected interface, including other apps and
 ## Project files
 
 - `netmeter.cpp` — Windows application source
-- `NetMeter.ico` and `NetMeter.rc` — bundled multi-size network icon for the tray and executable
+- `NetMeter.ico`, `NetMeter.png`, and `NetMeter.rc` — bundled network icon for the tray, executable, and README
 - `CMakeLists.txt` — CMake build configuration
