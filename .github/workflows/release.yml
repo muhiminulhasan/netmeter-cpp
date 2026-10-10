@@ -1,0 +1,97 @@
+name: Build and release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to create or update (for example v1.0.0)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            platform: x64
+          - arch: x86
+            platform: Win32
+          - arch: arm64
+            platform: ARM64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure build
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A ${{ matrix.platform }}
+
+      - name: Build Release
+        run: cmake --build build --config Release --parallel
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Compress-Archive `
+            -LiteralPath "build\Release\NetMeter.exe", "README.md", "NetMeter.ico" `
+            -DestinationPath "dist\NetMeter-win-${{ matrix.arch }}.zip" `
+            -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetMeter-win-${{ matrix.arch }}
+          path: dist/NetMeter-win-${{ matrix.arch }}.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish release assets
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: windows-2022
+    steps:
+      - name: Download architecture packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: NetMeter-win-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create or update GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            $tag = $env:GITHUB_REF_NAME
+          } else {
+            $tag = $env:RELEASE_TAG_INPUT
+          }
+          $assets = @(Get-ChildItem -Path "dist\NetMeter-win-*.zip" -File | ForEach-Object FullName)
+          if ($assets.Count -ne 3) {
+            throw "Expected three architecture ZIPs; found $($assets.Count)."
+          }
+          gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag @assets --repo $env:GITHUB_REPOSITORY --clobber
+          } else {
+            gh release create $tag @assets --repo $env:GITHUB_REPOSITORY `
+              --title "NetMeter $tag" --generate-notes --verify-tag
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to publish release $tag."
+          }
