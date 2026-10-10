@@ -35,6 +35,14 @@ The executable is created at `build/Release/NetMeter.exe`.
 
 Run `NetMeter.exe`. The meter appears beside the notification area, and the app's icon may be in the taskbar's hidden-icons menu. Right-click the icon and select **Exit Network Meter** to close it.
 
+## Start automatically at sign-in
+
+1. Extract NetMeter to a folder where you plan to keep it.
+2. Press **Win+R**, enter `shell:startup`, and press **Enter** to open your personal Startup folder.
+3. Create a shortcut to `NetMeter.exe` in that folder.
+
+Windows will start NetMeter when you sign in. To disable this, remove its shortcut from the Startup folder.
+
 ## How the rate is measured
 
 NetMeter asks Windows which network interface it would use to reach `1.1.1.1`, then samples that interface's received and sent byte counters every 500 ms. It converts the counter differences to bits per second and displays decimal units (`1 Mbps = 1,000,000 bits per second`).
